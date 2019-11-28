@@ -1,0 +1,18 @@
+= Advent of code
+
+These are my Advent of code solutions.
+
+== Run
+
+The directory structure is:
+
+----
+$year/input/$day.txt
+$year/src/$day.py
+----
+
+To run a given solution, do:
+
+----
+$ python3 $year/src/$day.py $year/input/$day.txt
+----
