@@ -24,8 +24,7 @@ def partB(seed, target):
 class TestProblem(unittest.TestCase):
 
     def test_mine(self):
-        self.assertEqual(partA('abcdef'), 609043)
-        self.assertEqual(partA('pqrstuv'), 1048970)
+        self.assertEqual(partA('abcdef', target=3), 3337)
 
 
 if __name__ == '__main__':
