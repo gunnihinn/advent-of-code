@@ -1,7 +1,5 @@
 import argparse
-import collections
 import enum
-import re
 import unittest
 
 _mask = (1 << 16) - 1
@@ -12,20 +10,12 @@ class Op(enum.Enum):
     NOT = "NOT"
     LSHIFT = "LSHIFT"
     RSHIFT = "RSHIFT"
-    SET = "SET"
 
-    def apply(self, wires, a, b=None):
-        if self is Op.NOT or self is Op.SET:
+    def apply(self, a: int, b: int=None) -> int:
+        if self is Op.NOT:
             assert b is None
         else:
             assert b is not None
-
-        if self is not Op.SET and isinstance(a, str):
-            a = wires[a]
-            assert isinstance(a, int)
-        if b is not None and isinstance(b, str):
-            b = wires[b]
-            assert isinstance(b, int)
 
         if self is Op.AND:
             return a & b
@@ -35,8 +25,6 @@ class Op(enum.Enum):
             return (~a) & _mask
         elif self is Op.LSHIFT:
             return (a << b) & _mask
-        elif self is Op.SET:
-            wires[a] = b
         else:
             return a >> b
 
@@ -47,37 +35,17 @@ def intify(x):
     except:
         return x
 
-def parse(lines):
-    wires = collections.defaultdict(int)
-    ops = []
-
-    for line in lines:
-        parts = [intify(p) for p in line.split(' ')]
-        if parts[1] == '->':
-            ops.append((parts[2], Op.SET, parts[0]))
-        elif parts[0] == 'NOT':
-            ops.append((parts[3], Op(parts[0]), parts[1]))
-        else:
-            ops.append((parts[4], Op(parts[1]), parts[0], parts[2]))
-
-    return wires, ops
-
-
-def run(wires, ops):
-    for op in ops:
-        out, o, *args = op
-        wires[out] = o.apply(wires, *args)
-
-    return wires
-
-
 def partA(lines):
-    wires, ops = parse(lines)
-    got = run(wires, ops)
-    return got['a']
+    registers = init(lines)
+    done = forward_eval(registers)
+    return done['a']
 
 def partB(seed):
-    pass
+    registers = init(lines)
+    done = forward_eval(registers)
+    registers['b'] = done['a']
+    done = forward_eval(registers)
+    return done['a']
 
 class TestProblem(unittest.TestCase):
 
@@ -91,8 +59,7 @@ y RSHIFT 2 -> g
 NOT x -> h
 NOT y -> i""".split('\n')
 
-        wires, ops = parse(lines)
-        got = run(wires, ops)
+        registers = init(lines)
         exp = {
             'd': 72,
             'e': 507,
@@ -104,10 +71,60 @@ NOT y -> i""".split('\n')
             'y': 456,
         }
 
-        print(got)
-        print(exp)
-
+        got = forward_eval(registers)
         self.assertEqual(got, exp)
+
+
+def init(lines):
+    registers = {}
+    for line in lines:
+        left, right = line.split(' -> ')
+        assert right not in registers
+        registers[right] = intify(left)
+
+    return registers
+
+
+def forward_eval(registers):
+    done = {}
+    c = -1
+    while len(done) != c:
+        c = len(done)
+        done = step(registers, done)
+
+    return done
+
+def step(registers, done):
+    if not done:
+        done = { k: v for k, v in registers.items() if isinstance(v, int) }
+
+    for k in registers.keys() - done.keys():
+        args = [intify(x) for x in registers[k].split(' ')]
+        assert 0 < len(args) and len(args) <= 3
+
+        if len(args) == 1:
+            a = args[0]
+            if a in done:
+                done[k] = done[a]
+        elif len(args) == 2:
+            assert args[0] == 'NOT'
+            op = Op(args[0])
+            a = args[1]
+            if a in done:
+                a = done[a]
+            if isinstance(a, int):
+                done[k] = op.apply(a)
+        else:
+            op = Op(args[1])
+            a, b = args[0], args[2]
+            if a in done:
+                a = done[a]
+            if b in done:
+                b = done[b]
+            if isinstance(a, int) and isinstance(b, int):
+                done[k] = op.apply(a, b)
+
+    return done
 
 
 if __name__ == '__main__':
@@ -119,4 +136,4 @@ if __name__ == '__main__':
         lines = [l.strip() for l in fh]
 
     print(partA(lines))
-    #print(partB(lines))
+    print(partB(lines))
