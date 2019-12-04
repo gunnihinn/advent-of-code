@@ -206,7 +206,6 @@ class TestProblem(unittest.TestCase):
             [("R", 8), ("U", 5), ("L", 5), ("D", 3)],
             [("U", 7), ("R", 6), ("D", 4), ("L", 4)],
         ]
-        import pdb; pdb.set_trace()
         self.assertEqual(partB(wires), 30)
 
     def test_run1b(self):
