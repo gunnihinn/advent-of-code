@@ -12,7 +12,7 @@ def run(codes):
     p = 0
     while codes[p] != 99:
         opcode = codes[p] % 100
-        if opcode in {1, 2}:
+        if opcode in {1, 2, 7, 8}:
             n_in = 2
             n_out = 1
         elif opcode == 3:
@@ -20,6 +20,9 @@ def run(codes):
             n_out = 1
         elif opcode == 4:
             n_in = 1
+            n_out = 0
+        elif opcode in {5, 6}:
+            n_in = 2
             n_out = 0
         else:
             raise Exception("Bad opcode {} in position {}".format(codes[p], p))
@@ -49,6 +52,24 @@ def run(codes):
             codes[p_out] = int(input("Input: "))
         elif opcode == 4:
             print(args[0])
+        elif opcode == 5:
+            if args[0] != 0:
+                p = args[1]
+                continue
+        elif opcode == 6:
+            if args[0] == 0:
+                p = args[1]
+                continue
+        elif opcode == 7:
+            if args[0] < args[1]:
+                codes[p_out] = 1
+            else:
+                codes[p_out] = 0
+        elif opcode == 8:
+            if args[0] == args[1]:
+                codes[p_out] = 1
+            else:
+                codes[p_out] = 0
 
         p += n_in + n_out + 1
 
