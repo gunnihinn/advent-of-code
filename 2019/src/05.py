@@ -1,7 +1,6 @@
 import argparse
 import unittest
 
-
 def partA(codes):
     cs = codes.copy()
     cs = run(cs)
@@ -12,47 +11,46 @@ def partB(codes):
 def run(codes):
     p = 0
     while codes[p] != 99:
-        if p == 180:
-            #import pdb; pdb.set_trace()
-            pass
         opcode = codes[p] % 100
         if opcode in {1, 2}:
-            params = 3
-        elif opcode in {3, 4}:
-            params = 1
+            n_in = 2
+            n_out = 1
+        elif opcode == 3:
+            n_in = 0
+            n_out = 1
+        elif opcode == 4:
+            n_in = 1
+            n_out = 0
         else:
             raise Exception("Bad opcode {} in position {}".format(codes[p], p))
 
-        modes = []
-        m = codes[p] // 100
-        for _ in range(params):
-            modes.append(m % 10)
-            m = m // 10
-            assert 0 == m or m == 1, "Invalid mode {} in code {}".format(m, codes[p])
-
         args = []
-        for i, mode in enumerate(modes[:-1]):
+        mode = codes[p] // 100
+        for i in range(n_in):
             val = codes[p + i + 1]
-            if mode == 0:
+            if mode % 10 == 0:
                 args.append(codes[val])
-            elif mode == 1:
+            elif mode % 10 == 1:
                 args.append(val)
+            else:
+                raise Exception("Invalid mode {} in code {}".format(m, codes[p]))
+            mode = mode // 10
 
-        if opcode == 4 and modes[0] == 0:
-            args.append(codes[codes[p + params]])
+        if n_out:
+            p_out = codes[p + n_in + 1]
         else:
-            args.append(codes[p + params])
+            p_out = None
 
         if opcode == 1:
-            codes[args[2]] = args[0] + args[1]
+            codes[p_out] = args[0] + args[1]
         elif opcode == 2:
-            codes[args[2]] = args[0] * args[1]
+            codes[p_out] = args[0] * args[1]
         elif opcode == 3:
-            codes[args[0]] = int(input("Input: "))
+            codes[p_out] = int(input("Input: "))
         elif opcode == 4:
             print(args[0])
 
-        p += params + 1
+        p += n_in + n_out + 1
 
     return codes
 
