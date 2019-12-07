@@ -7,11 +7,19 @@ class VM:
         if inputs is not None:
             self.inputs = [int(i) for i in inputs]
             self.inputs.reverse()
+        else:
+            self.inputs = []
         self.output = None
         self.codes = codes.copy()
+        self.ran = False
+
+    def stopped(self):
+        return self.codes[self.p] == 99
 
     def run(self):
-        while self.codes[self.p] != 99:
+        self.ran = False
+        while not self.stopped():
+            self.ran = True
             opcode = self.codes[self.p] % 100
             if opcode in {1, 2, 7, 8}:
                 n_in = 2
@@ -50,7 +58,10 @@ class VM:
             elif opcode == 2:
                 self.codes[p_out] = args[0] * args[1]
             elif opcode == 3:
-                self.codes[p_out] = self.inputs.pop()
+                try:
+                    self.codes[p_out] = self.inputs.pop()
+                except IndexError:
+                    return
             elif opcode == 4:
                 self.output = args[0]
             elif opcode == 5:
