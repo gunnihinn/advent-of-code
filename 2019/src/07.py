@@ -2,108 +2,24 @@ import argparse
 import itertools
 import unittest
 
-input_1 = None
-input_2 = None
-output = 0
+from src.vm import VM
 
 def partA(codes):
-    global input_1
-    global input_2
-    global output
-
     signals = []
     for phase in itertools.permutations(range(5), 5):
         input_2 = 0
+        out = None
         for p in phase:
-            input_1 = p
-            cs = codes.copy()
-            cs = run(cs)
-            input_2 = output
-        signals.append(output)
+            vm = VM(codes, [p, input_2])
+            vm.run()
+            input_2 = vm.output
+            out = vm.output
+        signals.append(out)
 
     return max(signals)
 
 def partB(codes):
     pass
-
-def run(codes):
-    global input_1
-    global input_2
-    global output
-
-    input_count = 0
-    p = 0
-    while codes[p] != 99:
-        opcode = codes[p] % 100
-        if opcode in {1, 2, 7, 8}:
-            n_in = 2
-            n_out = 1
-        elif opcode == 3:
-            n_in = 0
-            n_out = 1
-        elif opcode == 4:
-            n_in = 1
-            n_out = 0
-        elif opcode in {5, 6}:
-            n_in = 2
-            n_out = 0
-        else:
-            raise Exception("Bad opcode {} in position {}".format(codes[p], p))
-
-        args = []
-        mode = codes[p] // 100
-        for i in range(n_in):
-            val = codes[p + i + 1]
-            if mode % 10 == 0:
-                args.append(codes[val])
-            elif mode % 10 == 1:
-                args.append(val)
-            else:
-                raise Exception("Invalid mode {} in code {}".format(m, codes[p]))
-            mode = mode // 10
-
-        if n_out:
-            p_out = codes[p + n_in + 1]
-        else:
-            p_out = None
-
-        if opcode == 1:
-            codes[p_out] = args[0] + args[1]
-        elif opcode == 2:
-            codes[p_out] = args[0] * args[1]
-        elif opcode == 3:
-            if input_count == 0:
-                codes[p_out] = input_1
-                input_count += 1
-            elif input_count == 1:
-                codes[p_out] = input_2
-                input_count += 1
-            else:
-                raise Exception("Too much input")
-        elif opcode == 4:
-            output = args[0]
-        elif opcode == 5:
-            if args[0] != 0:
-                p = args[1]
-                continue
-        elif opcode == 6:
-            if args[0] == 0:
-                p = args[1]
-                continue
-        elif opcode == 7:
-            if args[0] < args[1]:
-                codes[p_out] = 1
-            else:
-                codes[p_out] = 0
-        elif opcode == 8:
-            if args[0] == args[1]:
-                codes[p_out] = 1
-            else:
-                codes[p_out] = 0
-
-        p += n_in + n_out + 1
-
-    return codes
 
 
 class TestProblem(unittest.TestCase):

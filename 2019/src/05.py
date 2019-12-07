@@ -1,7 +1,7 @@
 import argparse
 import unittest
 
-from vm import VM
+from src.vm import VM
 
 def partA(codes):
     vm = VM(codes, [1])
