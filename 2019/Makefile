@@ -1,3 +1,3 @@
 .PHONY: test
 test:
-	pytest src/*.py
+	pytest -v src/*.py

@@ -32,7 +32,6 @@ def partB(codes):
         vms.reverse()
 
         out = 0
-        #import pdb; pdb.set_trace()
         while vms:
             vm = vms.pop()
             vm.inputs.insert(0, out)
