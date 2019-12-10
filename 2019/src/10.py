@@ -8,7 +8,37 @@ def partA(positions):
     return max(count_lines_of_sight(pt, positions) for pt in positions)
 
 def partB(positions):
-    pass
+    origin = positions[0]
+    M = count_lines_of_sight(origin, positions)
+
+    for pt in positions[1:]:
+        c = count_lines_of_sight(pt, positions)
+        if c > M:
+            M = c
+            origin = pt
+
+    vectors = [
+        (pt[0] - origin[0], pt[1] - origin[1])
+        for pt in positions
+        if pt != origin
+    ]
+    direction_to_vector = collections.defaultdict(collections.deque)
+    positions.sort(key=lambda pt: distance(origin, pt))
+    for pt in positions:
+        v = (pt[0] - origin[0], pt[1] - origin[1])
+        direction_to_vector[direction(v)].append(v)
+
+    clock = sorted(direction_to_vector.keys(), key=lambda d: angle(d))
+
+    # repeat through clock
+    # pick element from each stack, while any left
+    # stop when we find element nr 200
+    c = 0
+    for d in itertools.repeat(clock):
+        pass
+    target = None
+
+    return (origin[0] + target[0], origin[1] + target[1]) 
 
 def count_lines_of_sight(pt, positions):
     positions = sorted(positions, key=lambda p: distance(pt, p))
@@ -22,7 +52,6 @@ def count_lines_of_sight(pt, positions):
         seen.add(d)
 
     return len(seen)
-
 
 def direction(pt):
     assert pt[0] or pt[1]
@@ -39,6 +68,28 @@ def direction(pt):
         y = pt[1] // d
 
     return (x, y)
+
+def angle(pt):
+    """
+    pt is a direction.
+    Compute the angle pt defines, in the range [0, 2pi],
+    but rotate the angle so (0, 1) is angle 0.
+    """
+    x, y = pt
+    assert x or y
+
+    if x == 0:
+        if y > 0:
+            return 0
+        else:
+            return math.pi
+
+    clock = math.atan(y / x) + math.pi / 2
+    if x < 0:
+        clock += math.pi
+
+    return clock
+
 
 def distance(pt_a, pt_b):
     return abs(pt_a[0] - pt_b[0]) + abs(pt_a[1] - pt_b[1])
@@ -76,6 +127,30 @@ class TestProblem(unittest.TestCase):
 ##...#..#.
 .#....####
 """.strip().split('\n')
+
+    grid3 = \
+"""
+.#..##.###...#######
+##.############..##.
+.#.######.########.#
+.###.#######.####.#.
+#####.##.#.##.###.##
+..#####..#.#########
+####################
+#.####....###.#.#.##
+##.#################
+#####.##.###..####..
+..######..##.#######
+####.##.####...##..#
+.#####..#.######.###
+##...#.##########...
+#.##########.#######
+.####.#.###.###.#.##
+....##.##.###..#####
+.#.#.###########.###
+#.#.#.#####.####.###
+###.##.####.##.#..##
+"""
 
     def test_parse(self):
         lines = self.grid1
@@ -126,6 +201,11 @@ class TestProblem(unittest.TestCase):
         lines = self.grid2
         positions = parse_positions(lines)
         assert partA(positions) == 33
+
+    def test_partB(self):
+        lines = self.grid3
+        positions = parse_positions(lines)
+        assert partB(positions) == (8, 2)
 
 
 if __name__ == '__main__':
