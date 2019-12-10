@@ -17,28 +17,29 @@ def partB(positions):
             M = c
             origin = pt
 
-    vectors = [
-        (pt[0] - origin[0], pt[1] - origin[1])
-        for pt in positions
-        if pt != origin
-    ]
-    direction_to_vector = collections.defaultdict(collections.deque)
+    direction_to_point = collections.defaultdict(collections.deque)
     positions.sort(key=lambda pt: distance(origin, pt))
     for pt in positions:
+        if pt == origin:
+            continue
         v = (pt[0] - origin[0], pt[1] - origin[1])
-        direction_to_vector[direction(v)].append(v)
+        direction_to_point[direction(v)].append(pt)
 
-    clock = sorted(direction_to_vector.keys(), key=lambda d: angle(d))
+    clock = sorted(direction_to_point.keys(), key=lambda d: angle(d))
 
     # repeat through clock
     # pick element from each stack, while any left
     # stop when we find element nr 200
     c = 0
-    for d in itertools.repeat(clock):
-        pass
-    target = None
+    for d in itertools.cycle(clock):
+        pts = direction_to_point[d]
+        if not pts:
+            continue
 
-    return (origin[0] + target[0], origin[1] + target[1]) 
+        pt = pts.popleft()
+        c += 1
+        if c == 200:
+            return pt
 
 def count_lines_of_sight(pt, positions):
     positions = sorted(positions, key=lambda p: distance(pt, p))
@@ -84,7 +85,7 @@ def angle(pt):
         else:
             return math.pi
 
-    clock = math.atan(y / x) + math.pi / 2
+    clock = -1 * math.atan(y / x) + math.pi / 2
     if x < 0:
         clock += math.pi
 
@@ -150,7 +151,7 @@ class TestProblem(unittest.TestCase):
 .#.#.###########.###
 #.#.#.#####.####.###
 ###.##.####.##.#..##
-"""
+""".strip().split('\n')
 
     def test_parse(self):
         lines = self.grid1
@@ -206,6 +207,19 @@ class TestProblem(unittest.TestCase):
         lines = self.grid3
         positions = parse_positions(lines)
         assert partB(positions) == (8, 2)
+
+    def test_angle(self):
+        dirs = []
+        N = 1000000
+        for i in range(100):
+            x = int(N * math.cos(i / 100))
+            y = int(N * math.sin(i / 100))
+            dirs.append(direction((x, y)))
+
+        got = sorted(dirs, key=lambda d: angle(d))
+        dirs.reverse()
+        exp = dirs
+        assert got == exp
 
 
 if __name__ == '__main__':
