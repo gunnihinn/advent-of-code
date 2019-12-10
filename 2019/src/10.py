@@ -7,7 +7,7 @@ import unittest
 def partA(positions):
     return max(count_lines_of_sight(pt, positions) for pt in positions)
 
-def partB(positions):
+def partB(positions, victim=200):
     origin = positions[0]
     M = count_lines_of_sight(origin, positions)
 
@@ -38,7 +38,7 @@ def partB(positions):
 
         pt = pts.popleft()
         c += 1
-        if c == 200:
+        if c == victim:
             return pt
 
 def count_lines_of_sight(pt, positions):
@@ -74,18 +74,18 @@ def angle(pt):
     """
     pt is a direction.
     Compute the angle pt defines, in the range [0, 2pi],
-    but rotate the angle so (0, 1) is angle 0.
+    but rotate the angle so (0, -1) is angle 0.
     """
     x, y = pt
     assert x or y
 
     if x == 0:
-        if y > 0:
+        if y < 0:
             return 0
         else:
             return math.pi
 
-    clock = -1 * math.atan(y / x) + math.pi / 2
+    clock = 1 * math.atan(y / x) + math.pi / 2
     if x < 0:
         clock += math.pi
 
@@ -203,23 +203,23 @@ class TestProblem(unittest.TestCase):
         positions = parse_positions(lines)
         assert partA(positions) == 33
 
+    def test_partB_1(self):
+        lines = self.grid3
+        positions = parse_positions(lines)
+        assert partB(positions, 1) == (11, 12)
+
+    def test_partB_2(self):
+        lines = self.grid3
+        positions = parse_positions(lines)
+        assert partB(positions, 2) == (12, 1)
+
     def test_partB(self):
         lines = self.grid3
         positions = parse_positions(lines)
         assert partB(positions) == (8, 2)
 
-    def test_angle(self):
-        dirs = []
-        N = 1000000
-        for i in range(100):
-            x = int(N * math.cos(i / 100))
-            y = int(N * math.sin(i / 100))
-            dirs.append(direction((x, y)))
-
-        got = sorted(dirs, key=lambda d: angle(d))
-        dirs.reverse()
-        exp = dirs
-        assert got == exp
+    def test_angle_1(self):
+        assert angle((0, -1)) == 0
 
 
 if __name__ == '__main__':
@@ -231,4 +231,5 @@ if __name__ == '__main__':
         positions = parse_positions(fh)
 
     print(partA(positions))
-    print(partB(positions))
+    pt = partB(positions)
+    print(pt[0] * 100 + pt[1])
