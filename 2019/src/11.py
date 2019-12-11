@@ -1,4 +1,5 @@
 import argparse
+import collections
 import enum
 import itertools
 import unittest
@@ -74,6 +75,7 @@ def partB(codes):
             raise Exception("Got too much output")
         elif len(vm._output) == 2:
             paint, move = vm._output
+            assert paint in {0, 1}
             grid[(pos_x, pos_y)] = paint
 
             facing = facing.turn(move)
@@ -86,30 +88,29 @@ def partB(codes):
             vm._output = []
         else:
             break
-    y_m = min(pt[1] for pt in grid)
-    grid = {(pt[0], pt[1] - y_m) for pt, paint in grid.items() if paint}
 
-    x_m, x_M = min(pt[0] for pt in grid), max(pt[0] for pt in grid)
-    y_m, y_M = min(pt[1] for pt in grid), max(pt[1] for pt in grid)
+    x_m = min(pt[0] for pt in grid if grid[pt])
+    y_m = min(pt[1] for pt in grid if grid[pt])
+    painted = {(pt[0] - x_m, pt[1] - y_m) for pt, paint in grid.items() if paint}
 
-    width = x_M - x_m + 1
-    height = y_M - y_m + 1
-    floor = [[0] * width] * height
+    width = max(pt[0] for pt in painted) + 1
+    height = max(pt[1] for pt in painted) + 1
 
-    with open('pts.txt', 'w') as fh:
-        for x, y in grid:
-            print('{},{}'.format(x,y), file=fh)
+    floor = []
+    for _ in range(height):
+        floor.append([0] * width)
 
-    for x, y in grid:
-        floor[y - y_m][x - x_m] = 1
+    for pt in painted:
+        floor[pt[1]][pt[0]] = 1
 
-    #import pdb; pdb.set_trace()
+    floor.reverse()
     for row in floor:
         for pt in row:
-            out = 'x' if pt else ' '
-            print(out, end='')
+            if pt == 1:
+                print('x', end='')
+            else:
+                print(' ', end='')
         print('|\n', end='')
-
 
 class TestProblem(unittest.TestCase):
 
