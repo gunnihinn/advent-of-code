@@ -6,116 +6,124 @@ import math
 import re
 import unittest
 
-def partA(moons):
+combinations = (
+    (0, 1),
+    (0, 2),
+    (0, 3),
+    (1, 2),
+    (1, 3),
+    (2, 3),
+)
+
+def lcm(x, y, z):
+    fx = prime_factors(x)
+    fy = prime_factors(y)
+    fz = prime_factors(z)
+
+    factors = set(fx.keys()) | set(fy.keys()) | set(fz.keys())
+    m = 1
+    for f in factors:
+        a = f ** max(fx[f], fy[f], fz[f])
+        m *= a
+
+    return m
+
+
+def prime_factors(n):
+    factors = collections.Counter()
+    i = 2
+    while i <= n:
+        if n % i == 0:
+            factors[i] += 1
+            n = n // i
+        else:
+            if i == 2:
+                i = 3
+            else:
+                i += 2
+
+    return factors
+
+def partA(xs, ys, zs):
     for _ in range(1000):
-        moons = step(moons)
+        xs = step(xs)
+        ys = step(ys)
+        zs = step(zs)
 
-    return energy(moons)
+    return energy(xs, ys, zs)
 
-def partB(moons):
-    positions = { frozenset(x for x in moons) }
+def partB(xs, ys, zs):
+    rx = repeat(xs)
+    ry = repeat(ys)
+    rz = repeat(zs)
+
+    return lcm(rx, ry, rz)
+
+
+def repeat(moons):
+    ps = {tuple(moons)}
     i = 0
     while True:
         moons = step(moons)
         i += 1
-
-        if i % 100000 == 0:
-            print(datetime.datetime.now())
-
-        pos = frozenset(x for x in moons)
-        if pos in positions:
+        m = tuple(moons)
+        if m in ps:
             return i
-        
-        positions.add(pos)
+        else:
+            ps.add(m)
+
 
 def step(moons):
-    new = []
-    gs = {x: Vector.zero(len(x)) for x, _ in moons}
+    gs = [0, 0, 0, 0]
+    for i, j in combinations:
+        g = gravity(moons[2*i], moons[2*j])
+        gs[i] += g
+        gs[j] -= g
 
-    for (x, vx), (y, vy) in itertools.combinations(moons, 2):
-        g = gravity(x, y)
-        gs[x] = gs[x] + g
-        gs[y] = gs[y] - g
-
-    for x, vx in moons:
-        nvx = vx + gs[x]
-        new.append((x + nvx, nvx))
+    new = [0] * 8
+    for i in range(4):
+        v = moons[2*i + 1] + gs[i]
+        new[2*i] = moons[2*i] + v
+        new[2*i + 1] = v
 
     return new
 
-class Vector:
+def energy(xs, ys, zs):
+    e = 0
+    for i in range(4):
+        a = abs(xs[2*i]) + abs(ys[2*i]) + abs(zs[2*i])
+        b = abs(xs[2*i+1]) + abs(ys[2*i+1]) + abs(zs[2*i+1])
+        e += a * b
 
-    def __init__(self, *coords):
-        self.coords = tuple(coords)
+    return e
 
-    def __add__(self, other):
-        assert len(self.coords) == len(other.coords)
-        cs = [x + y for x, y in zip(self.coords, other.coords)]
-        return Vector(*cs)
-
-    def __sub__(self, other):
-        assert len(self.coords) == len(other.coords)
-        cs = [x - y for x, y in zip(self.coords, other.coords)]
-        return Vector(*cs)
-
-    def __neg__(self):
-        cs = [-1 * x for x in self.coords]
-        return Vector(*cs)
-
-    def __eq__(self, other):
-        assert len(self.coords) == len(other.coords)
-        return self.coords == other.coords
-
-    def __hash__(self):
-        return self.coords.__hash__()
-
-    def __repr__(self):
-        return self.coords.__repr__()
-
-    def __str__(self):
-        return self.coords.__str__()
-
-    def __len__(self):
-        return len(self.coords)
-
-    def __iter__(self):
-        return self.coords.__iter__()
-
-    def __abs__(self):
-        return sum(abs(x) for x in self.coords)
-
-    @staticmethod
-    def zero(n):
-        assert n >= 0
-        zs = [0] * n
-        return Vector(*zs)
-
-def energy(moons):
-    return sum(abs(x) * abs(vx) for x, vx in moons)
-
-def gravity(xs, ys):
-    # Note: gravity is antisymmetric.
-    # Computes the vector that applies to xs (- this applies to ys)
-    cs = []
-    for x, y in zip(xs, ys):
-        if x < y:
-            cs.append(1)
-        elif x == y:
-            cs.append(0)
-        else:
-            cs.append(-1)
-    return Vector(*cs)
+def gravity(x, y):
+    if x < y:
+        return 1
+    elif x == y:
+        return 0
+    else:
+        return -1
 
 
 def parse_moons(lines):
-    positions = []
+    xs = []
+    ys = []
+    zs = []
+
     for line in lines:
         m = re.search(r'x=(-?[0-9]+), y=(-?[0-9]+), z=(-?[0-9]+)', line)
         assert m is not None
-        positions.append(Vector(int(m.group(1)), int(m.group(2)), int(m.group(3))))
+        xs.append(int(m.group(1)))
+        xs.append(0)
 
-    return [(x, Vector.zero(len(x))) for x in positions]
+        ys.append(int(m.group(2)))
+        ys.append(0)
 
+        zs.append(int(m.group(3)))
+        zs.append(0)
+
+    return xs, ys, zs
 
 class TestProblem(unittest.TestCase):
 
@@ -126,35 +134,40 @@ class TestProblem(unittest.TestCase):
 <x=4, y=-8, z=8>
 <x=3, y=5, z=-1>
 """.strip().split('\n')
-        moons = parse_moons(lines)
+        xs, ys, zs = parse_moons(lines)
 
         step0 = [
-            (Vector(-1, 0, 2), Vector(0, 0, 0)),
-            (Vector(2, -10, -7), Vector(0, 0, 0)),
-            (Vector(4, -8, 8), Vector(0, 0, 0)),
-            (Vector(3, 5, -1), Vector(0, 0, 0)),
+            [-1, 0, 2, 0, 4, 0, 3, 0],
+            [0, 0, -10, 0, -8, 0, 5, 0],
+            [2, 0, -7, 0, 8, 0, -1, 0],
         ]
-        assert moons == step0
+        assert xs == step0[0]
+        assert ys == step0[1]
+        assert zs == step0[2]
 
         step1 = [
-            (Vector(2, -1, 1), Vector(3, -1, -1)),
-            (Vector(3, -7, -4), Vector(1, 3, 3)),
-            (Vector(1, -7, 5), Vector(-3, 1, -3)),
-            (Vector(2, 2, 0), Vector(-1, -3, 1)),
+            [2, 3, 3, 1, 1, -3, 2, -1],
+            [-1, -1, -7, 3, -7, 1, 2, -3],
+            [1, -1, -4, 3, 5, -3, 0, 1],
         ]
-        moons = step(moons)
-        assert len(moons) == len(step1)
-        assert set(moons) == set(step1)
+        xs = step(xs)
+        ys = step(ys)
+        zs = step(zs)
+        assert xs == step1[0]
+        assert ys == step1[1]
+        assert zs == step1[2]
 
         step2 = [
-            (Vector(5, -3, -1), Vector(3, -2, -2)),
-            (Vector(1, -2, 2), Vector(-2, 5, 6)),
-            (Vector(1, -4, -1), Vector(0, 3, -6)),
-            (Vector(1, -4, 2), Vector(-1, -6, 2)),
+            [5, 3, 1, -2, 1, 0, 1, -1],
+            [-3, -2, -2, 5, -4, 3, -4, -6],
+            [-1, -2, 2, 6, -1, -6, 2, 2],
         ]
-        moons = step(moons)
-        assert len(moons) == len(step2)
-        assert set(moons) == set(step2)
+        xs = step(xs)
+        ys = step(ys)
+        zs = step(zs)
+        assert xs == step2[0]
+        assert ys == step2[1]
+        assert zs == step2[2]
 
     def test_2(self):
         lines = """
@@ -163,12 +176,14 @@ class TestProblem(unittest.TestCase):
 <x=4, y=-8, z=8>
 <x=3, y=5, z=-1>
 """.strip().split('\n')
-        moons = parse_moons(lines)
+        xs, ys, zs = parse_moons(lines)
 
         for _ in range(10):
-            moons = step(moons)
+            xs = step(xs)
+            ys = step(ys)
+            zs = step(zs)
 
-        assert energy(moons) == 179
+        assert energy(xs, ys, zs) == 179
 
     def test_3(self):
         lines = """
@@ -177,9 +192,22 @@ class TestProblem(unittest.TestCase):
 <x=4, y=-8, z=8>
 <x=3, y=5, z=-1>
 """.strip().split('\n')
-        moons = parse_moons(lines)
+        xs, ys, zs = parse_moons(lines)
 
-        assert partB(moons) == 2772
+        assert partB(xs, ys, zs) == 2772
+
+    def test_4(self):
+        exp = collections.Counter()
+        exp[2] = 4
+        assert prime_factors(16) == exp
+
+        exp = collections.Counter()
+        exp[2] = 2
+        exp[7] = 1
+        assert prime_factors(28) == exp
+
+    def test_5(self):
+        assert lcm(18, 28, 44) == 2772
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -187,7 +215,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with open(args.input) as fh:
-        moons = parse_moons(fh)
+        xs, ys, zs = parse_moons(fh)
 
-    print(partA(moons))
-    print(partB(moons))
+    print(partA(xs, ys, zs))
+    print(partB(xs, ys, zs))
