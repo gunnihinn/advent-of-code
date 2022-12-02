@@ -1,5 +1,16 @@
 # What did we learn from this?
 
+## Day 2
+
+I had a bug where I wrote
+
+```
+if (a = b)
+```
+
+and the compiler didn't bat an eye, even with warnings and errors set to
+complain about everything.
+
 ## Day 1
 
 We can't pass a stream by value to a function (which makes sense, I guess).
