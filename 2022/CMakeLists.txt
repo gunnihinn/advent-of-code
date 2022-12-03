@@ -7,3 +7,4 @@ set(CMAKE_CXX_FLAGS "-O0 -g -Wall -Wextra")
 
 add_executable(01 01/main.cpp)
 add_executable(02 02/main.cpp)
+add_executable(03 03/main.cpp)
