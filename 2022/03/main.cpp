@@ -52,7 +52,45 @@ int part1( Data data )
 
 int part2( Data data )
 {
-    return 0;
+    int sum = 0;
+    for(auto it = data.sacks.begin(); it != data.sacks.end();)
+    {
+        // Maybe do less work while parsing and have each part munge the data?
+        auto a = ( *it ).first;
+        a.insert( a.end(), ( *it ).second.begin(), ( *it ).second.end() );
+        ++it;
+
+        auto b = ( *it ).first;
+        b.insert( b.end(), ( *it ).second.begin(), ( *it ).second.end() );
+        ++it;
+
+        auto c = ( *it ).first;
+        c.insert( c.end(), ( *it ).second.begin(), ( *it ).second.end() );
+        ++it;
+
+        sort( a.begin(), a.end() );
+        sort( b.begin(), b.end() );
+        sort( c.begin(), c.end() );
+
+        vector< char > common1;
+        set_intersection( a.begin(), a.end(), b.begin(), b.end(), back_inserter( common1 ) );
+        sort( common1.begin(), common1.end() );
+
+        vector< char > common;
+        set_intersection( common1.begin(), common1.end(), c.begin(), c.end(), back_inserter( common ) );
+
+        char last = 0;
+        for(auto ch : common )
+        {
+            if( last != ch )
+            {
+                sum += priority( ch );
+                last = ch;
+            }
+        }
+    }
+
+    return sum;
 }
 
 Data parse( istream& is )
