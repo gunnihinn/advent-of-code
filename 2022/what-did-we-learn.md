@@ -1,5 +1,19 @@
 # What did we learn from this?
 
+## Day 3
+
+I'm maybe doing too much work in the `parse` function. Whatever I do there ends
+up being tailored to part 1, and if part 2 holds the data in a different way I
+have to contort to make do.
+
+I also don't know how set intersections work. I was convinced that
+
+```
+    A \cap B \cap C = (A \cup B) \cap C
+```
+
+but that gave the wrong answer for part 2.
+
 ## Day 2
 
 I had a bug where I wrote
