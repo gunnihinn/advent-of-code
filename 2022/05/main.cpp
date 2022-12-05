@@ -31,16 +31,6 @@ int part1( Data data )
             data.stacks[ to ].push_back( data.stacks[ from ].back() );
             data.stacks[ from ].pop_back();
         }
-        /*
-        auto a = data.stacks[ from ];
-        auto b = data.stacks[ to ];
-        for(int i = 0; i < amount; i++)
-        {
-            b.push_back( a.pop_back() );
-        }
-        data.stacks[ from ] = a;
-        data.stacks[ to ] = b;
-    */
     }
 
     for(long unsigned int i = 1; i < data.stacks.size() + 1; i++)
@@ -54,6 +44,25 @@ int part1( Data data )
 
 int part2( Data data )
 {
+    for(auto [ amount, from, to ] : data.moves)
+    {
+        auto j = data.stacks[ from ].size() - amount;
+        for(int i = 0; i < amount; i++)
+        {
+            data.stacks[ to ].push_back( data.stacks[ from ].at( j + i ) );
+        }
+        for(int i = 0; i < amount; i++)
+        {
+            data.stacks[ from ].pop_back();
+        }
+    }
+
+    for(long unsigned int i = 1; i < data.stacks.size() + 1; i++)
+    {
+        cout << data.stacks[ i ].back();
+    }
+    cout << " ";
+
     return 0;
 }
 
