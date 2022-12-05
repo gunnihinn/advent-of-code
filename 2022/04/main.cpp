@@ -35,7 +35,20 @@ int part1( Data data )
 
 int part2( Data data )
 {
-    return 0;
+    int sum = 0;
+    for(auto [ a, b ] : data.ranges)
+    {
+        if( a.left <= b.left && b.left <= a.right )
+        {
+            sum += 1;
+        }
+        else if( b.left <= a.left && a.left <= b.right )
+        {
+            sum += 1;
+        }
+    }
+
+    return sum;
 }
 
 Data parse( istream& is )
