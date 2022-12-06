@@ -14,17 +14,20 @@ class Data
 
 int part1( Data data )
 {
-    return 0;
+    int result = 0;
+    return result;
 }
 
 int part2( Data data )
 {
-    return 0;
+    int result = 0;
+    return result;
 }
 
 Data parse( istream& is )
 {
-    return Data();
+    auto data = Data();
+    return data;
 }
 
 int main( int argc, char* argv[] )
