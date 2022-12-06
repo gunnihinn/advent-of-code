@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <numeric>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -14,30 +15,31 @@ public:
     vector< string > buffers;
 };
 
+int norepeats( string buffer, long unsigned int k )
+{
+    auto chars = buffer.data();
+    for(long unsigned int i = 0; i < buffer.size() - k; i++)
+    {
+        set< char > cs;
+        for(long unsigned int j = i; j < i + k; j++ )
+        {
+            cs.insert( chars[ j ] );
+        }
+
+        if( cs.size() == k )
+        {
+            return i + k;
+        }
+    }
+
+    return 0;
+}
+
 int part1( Data data )
 {
     for(auto buffer : data.buffers)
     {
-        auto chars = buffer.data();
-        for(long unsigned int i = 4; i < buffer.size(); i++)
-        {
-            if(
-                chars[ i - 4 ] != chars[ i - 3 ] &&
-                chars[ i - 4 ] != chars[ i - 2 ] &&
-                chars[ i - 4 ] != chars[ i - 1 ] &&
-                chars[ i - 4 ] != chars[ i  ] &&
-                chars[ i - 3 ] != chars[ i - 2 ] &&
-                chars[ i - 3 ] != chars[ i - 1 ] &&
-                chars[ i - 3 ] != chars[ i  ] &&
-                chars[ i - 2 ] != chars[ i - 1 ] &&
-                chars[ i - 2 ] != chars[ i  ] &&
-                chars[ i - 1 ] != chars[ i ]
-                )
-            {
-                cout << i << " ";
-                break;
-            }
-        }
+        cout << norepeats( buffer, 4 ) << " ";
     }
 
     return 0;
@@ -45,6 +47,11 @@ int part1( Data data )
 
 int part2( Data data )
 {
+    for(auto buffer : data.buffers)
+    {
+        cout << norepeats( buffer, 14 ) << " ";
+    }
+
     return 0;
 }
 
