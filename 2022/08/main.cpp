@@ -83,6 +83,77 @@ bool isVisible( vector< vector< int > > grid, long unsigned int row,  long unsig
     return up || down || left || right;
 }
 
+int vdist( vector< vector< int > > grid, long unsigned row, long unsigned col, int dir )
+{
+    if( row == 0 ||
+        row == grid.size() - 1 ||
+        col == 0 ||
+        col == grid.at( row ).size() - 1 )
+    {
+        return 0;
+    }
+
+    // dir : 0, 1 - left, right
+    // dir : 2, 3 - up, down
+    int val = 0;
+    if( dir == 0 )
+    {
+        for(int i = row - 1; i >= 0; i--)
+        {
+            val++;
+            if( grid.at( i ).at( col ) >= grid.at( row ).at( col ) )
+            {
+                break;
+            }
+        }
+    }
+    else if( dir == 1 )
+    {
+        for(int i = row + 1; i < grid.size(); i++)
+        {
+            val++;
+            if( grid.at( i ).at( col ) >= grid.at( row ).at( col ) )
+            {
+                break;
+            }
+        }
+    }
+    else if( dir == 2 )
+    {
+        for(int j = col - 1; j >= 0; j--)
+        {
+            val++;
+            if( grid.at( row ).at( j ) >= grid.at( row ).at( col ) )
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        for(int j = col + 1; j < grid.at( row ).size(); j++)
+        {
+            val++;
+            if( grid.at( row ).at( j ) >= grid.at( row ).at( col ) )
+            {
+                break;
+            }
+        }
+    }
+
+    return val;
+}
+
+int distance( vector< vector< int > > grid, long unsigned int row,  long unsigned int col )
+{
+    int left = vdist( grid, row, col, 0 );
+    int right = vdist( grid, row, col, 1 );
+    int up = vdist( grid, row, col, 2 );
+    int down = vdist( grid, row, col, 3 );
+
+    return up * down * left * right;
+}
+
 int part1( Data data )
 {
     int result = 0;
@@ -105,6 +176,19 @@ int part1( Data data )
 int part2( Data data )
 {
     int result = 0;
+
+    for(long unsigned int row = 0; row < data.grid.size(); row++)
+    {
+        for(long unsigned int col = 0; col < data.grid.at( row ).size(); col++)
+        {
+            int val = distance( data.grid, row, col );
+            if( val > result )
+            {
+                result = val;
+            }
+        }
+    }
+
     return result;
 }
 
