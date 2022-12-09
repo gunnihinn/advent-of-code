@@ -71,7 +71,6 @@ int part1( Data data )
     Rope tail = { 0, 0 };
     set< pair< int, int > > seen = { { 0, 0 } };
 
-    //cout << "\n";
     for(auto [ dir, steps ] : data.moves)
     {
         for(int i = 0; i < steps; i++)
@@ -79,51 +78,38 @@ int part1( Data data )
             head = move_head( head, dir );
             tail = move_tail( head, tail );
             seen.insert( { tail.x, tail.y } );
-            //cout << "head " << head.x << ", " << head.y << "\n";
-            //cout << "tail " << tail.x << ", " << tail.y << "\n";
-            //cout << "---\n";
         }
     }
-
-    /*
-    int Mx = 0;
-    int My = 0;
-    int mx = 0;
-    int my = 0;
-    for(auto [ x, y ] : seen)
-    {
-        if( x > Mx )
-            Mx = x;
-        if( x < mx )
-            mx = x;
-        if( y > My )
-            My = y;
-        if( y < my )
-            my = y;
-    }
-
-    cout << "\n";
-    for(int j = My; j >= my; j--)
-    {
-        for(int i = mx; i <= Mx; i++)
-        {
-            if( seen.find( { i, j } ) == seen.end() )
-                cout << ".";
-            else
-                cout << "#";
-        }
-        cout << "\n";
-    }
-    cout << "\n";
-    */
 
     return seen.size();
 }
 
 int part2( Data data )
 {
-    int result = 0;
-    return result;
+    int n = 10;
+    vector< Rope > ropes;
+    for(int i = 0; i < n; i++)
+    {
+        ropes.push_back( { 0, 0 } );
+    }
+    set< pair< int, int > > seen = { { 0, 0 } };
+
+    for(auto [ dir, steps ] : data.moves)
+    {
+        for(int i = 0; i < steps; i++)
+        {
+            vector< Rope > newRopes = { move_head( ropes.at( 0 ), dir ) };
+            for(int j = 1; j < n; j++)
+            {
+                newRopes.push_back( move_tail( newRopes.at( j - 1 ), ropes.at( j ) ) );
+            }
+
+            seen.insert( { newRopes.back().x, newRopes.back().y } );
+            ropes = newRopes;
+        }
+    }
+
+    return seen.size();
 }
 
 Data parse( istream& is )
