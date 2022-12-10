@@ -58,6 +58,55 @@ int part1( Data data )
 
 int part2( Data data )
 {
+    vector< vector< char > > crt;
+    for(int i = 0; i < 6; i++)
+    {
+        vector< char > line;
+        for(int j =0; j < 40; j++)
+        {
+            line.push_back( '.' );
+        }
+        crt.push_back( line );
+    }
+
+    int x = 1;
+    int cycle = 0;
+    for(auto [ op, val ] : data.instructions)
+    {
+        if( op == addx )
+        {
+            for(int j = 0; j < 2; j++)
+            {
+
+                if( abs( x - ( cycle % 40 ) ) < 2 )
+                {
+                    crt.at( cycle / 40 ).at( cycle % 40 ) = '#';
+                }
+                cycle++;
+            }
+            x += val;
+        }
+        else
+        {
+
+            if( abs( x - ( cycle % 40 ) ) < 2 )
+            {
+                crt.at( cycle / 40 ).at( cycle % 40 ) = '#';
+            }
+            cycle++;
+        }
+    }
+
+    cout << "\n";
+    for(auto line: crt)
+    {
+        for(auto c  :line)
+        {
+            cout << c;
+        }
+        cout << "\n";
+    }
+
     int result = 0;
     return result;
 }
