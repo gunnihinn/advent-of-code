@@ -86,7 +86,44 @@ uint64_t part1( Data data )
 
 uint64_t part2( Data data )
 {
-    uint64_t result = 0;
+    map< uint64_t, uint64_t > inspected;
+    for(uint64_t m = 0; m < data.monkeys.size(); m++)
+    {
+        inspected[ m ] = 0;
+    }
+
+    uint64_t max = 1;
+    for(Monkey m : data.monkeys)
+    {
+        max *= m.test;
+    }
+
+    for(uint64_t i = 0; i < 10000; i++)
+    {
+        for(uint64_t m = 0; m < data.monkeys.size(); m++)
+        {
+            inspected[ m ] += data.monkeys[ m ].items.size();
+            for(uint64_t item: data.monkeys[ m ].items)
+            {
+                item = data.monkeys[ m ].operation( item );
+                item = item % max;
+                bool cond = ( item % data.monkeys[ m ].test ) == 0;
+                uint64_t next =  data.monkeys[ m ].tf[ cond ];
+                data.monkeys[ next ].items.push_back( item );
+            }
+            data.monkeys[ m ].items = {};
+        }
+    }
+
+    vector< uint64_t > vals;
+    for(auto [ k, v ] : inspected)
+    {
+        vals.push_back( v );
+    }
+    sort( vals.begin(), vals.end() );
+
+    uint64_t result = vals.at( vals.size() - 1 ) * vals.at( vals.size() - 2 );
+
     return result;
 }
 
