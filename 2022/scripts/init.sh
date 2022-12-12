@@ -9,5 +9,4 @@ mkdir -p "$root/$day"
 cp "$root/main.cpp" "$root/$day"
 echo "add_executable($day $day/main.cpp)" >>"$root/CMakeLists.txt"
 
-mv "~/Downloads/ex*" "$root/$day"
 mv "~/Downloads/input" "$root/$day/input.txt"
