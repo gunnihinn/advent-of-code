@@ -24,6 +24,26 @@ uint64_t timeSinceEpochMillisec()
     return duration_cast< milliseconds >( system_clock::now().time_since_epoch() ).count();
 }
 
+bool climbable( const vector< vector< char > > &grid, const pair< int, int > &from, const pair< int, int > &to )
+{
+    auto [ y0, x0 ] = from;
+    auto [ y1, x1 ] = to;
+    return grid.at( y1 ).at( x1 ) - grid.at( y0 ).at( x0 ) <= 1;
+}
+
+int calc( const map< pair< int, int >, int > &dist, const pair< int, int > &current, const pair< int, int > &p )
+{
+    auto it = dist.find( p );
+    if( it == dist.end() )
+    {
+        return dist.at( current ) + 1;
+    }
+    else
+    {
+        return min( dist.at( current ) + 1, it->second );
+    }
+}
+
 int dijkstra( vector< vector< char > > grid, pair< int, int > start, pair< int, int > end )
 {
     map< pair< int, int >, int > dist;
@@ -34,44 +54,25 @@ int dijkstra( vector< vector< char > > grid, pair< int, int > start, pair< int, 
         for(int x =0; x < grid.at( y ).size(); x++)
             unvisited.insert( { y, x } );
 
-    auto climbable = [ grid ](pair< int, int > from, pair< int, int > to) {
-        auto [ y0, x0 ] = from;
-        auto [ y1, x1 ] = to;
-        return grid.at( y1 ).at( x1 ) - grid.at( y0 ).at( x0 ) <= 1;
-    };
-
     auto current = start;
-    while( unvisited.size() > 0 )
+    while( unvisited.find( end ) != unvisited.end() )
     {
         auto [ y, x ] = current;
-        vector< pair< int, int > > neighbors;
-        if( y > 0 && climbable( current, { y - 1, x } ) )
-            neighbors.push_back( { y - 1, x } );
-        if( y < grid.size() - 1 && climbable( current, { y + 1, x } ) )
-            neighbors.push_back( { y + 1, x } );
-        if( x > 0 && climbable( current, { y, x - 1 } ) )
-            neighbors.push_back( { y, x - 1 } );
-        if( x < grid.at( y ).size() - 1 && climbable( current, { y, x + 1 } ) )
-            neighbors.push_back( { y, x + 1 } );
+        if( y > 0 && climbable( grid, current, { y - 1, x } ) )
+            dist[ { y - 1, x } ] = calc( dist, current, { y - 1, x } );
+        if( y < grid.size() - 1 && climbable( grid, current, { y + 1, x } ) )
+            dist[ { y + 1, x } ] = calc( dist, current, { y + 1, x } );
+        if( x > 0 && climbable( grid, current, { y, x - 1 } ) )
+            dist[ { y, x - 1 } ] = calc( dist, current, { y, x - 1 } );
+        if( x < grid.at( y ).size() - 1 && climbable( grid, current, { y, x + 1 } ) )
+            dist[ { y, x + 1 } ] = calc( dist, current, { y, x + 1 } );
 
-        for(auto p : neighbors)
-        {
-            auto it = dist.find( p );
-            if( it == dist.end() )
-            {
-                dist[ p ] = dist[ current ] + 1;
-            }
-            else
-            {
-                dist[ p ] = min( dist[ current ] + 1, it->second );
-            }
-        }
         unvisited.erase( current );
 
         auto it = min_element(
             unvisited.begin(),
             unvisited.end(),
-            [ dist ](const pair< int, int > a, const pair< int, int > b){
+            [ &dist ](const pair< int, int > &a, const pair< int, int > &b){
             auto it1 = dist.find( a );
             if( it1 == dist.end() )
                 return false;
