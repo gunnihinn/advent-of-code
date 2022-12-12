@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <chrono>
 #include <iostream>
 #include <map>
 #include <set>
@@ -17,34 +18,40 @@ struct Data
     pair< int, int > end;
 };
 
-int part1( Data data )
+uint64_t timeSinceEpochMillisec()
+{
+    using namespace std::chrono;
+    return duration_cast< milliseconds >( system_clock::now().time_since_epoch() ).count();
+}
+
+int dijkstra( vector< vector< char > > grid, pair< int, int > start, pair< int, int > end )
 {
     map< pair< int, int >, int > dist;
-    dist[ data.start ] = 0;
+    dist[ start ] = 0;
 
     set< pair< int, int > > unvisited;
-    for(int y = 0; y < data.grid.size(); y++)
-        for(int x =0; x < data.grid.at( y ).size(); x++)
+    for(int y = 0; y < grid.size(); y++)
+        for(int x =0; x < grid.at( y ).size(); x++)
             unvisited.insert( { y, x } );
 
-    auto climbable = [ data ](pair< int, int > from, pair< int, int > to) {
+    auto climbable = [ grid ](pair< int, int > from, pair< int, int > to) {
         auto [ y0, x0 ] = from;
         auto [ y1, x1 ] = to;
-        return data.grid.at( y1 ).at( x1 ) - data.grid.at( y0 ).at( x0 ) <= 1;
+        return grid.at( y1 ).at( x1 ) - grid.at( y0 ).at( x0 ) <= 1;
     };
 
-    auto current = data.start;
+    auto current = start;
     while( unvisited.size() > 0 )
     {
         auto [ y, x ] = current;
         vector< pair< int, int > > neighbors;
         if( y > 0 && climbable( current, { y - 1, x } ) )
             neighbors.push_back( { y - 1, x } );
-        if( y < data.grid.size() - 1 && climbable( current, { y + 1, x } ) )
+        if( y < grid.size() - 1 && climbable( current, { y + 1, x } ) )
             neighbors.push_back( { y + 1, x } );
         if( x > 0 && climbable( current, { y, x - 1 } ) )
             neighbors.push_back( { y, x - 1 } );
-        if( x < data.grid.at( y ).size() - 1 && climbable( current, { y, x + 1 } ) )
+        if( x < grid.at( y ).size() - 1 && climbable( current, { y, x + 1 } ) )
             neighbors.push_back( { y, x + 1 } );
 
         for(auto p : neighbors)
@@ -79,13 +86,35 @@ int part1( Data data )
     }
 
 
-    return dist[ data.end ];
+    return dist[ end ];
+}
+
+int part1( Data data )
+{
+    return dijkstra( data.grid, data.start, data.end );
 }
 
 int part2( Data data )
 {
-    int result = 0;
-    return result;
+    vector< pair< int, int > > as;
+    for(int y = 0; y < data.grid.size(); y++)
+        for(int x = 0; x < data.grid.at( y ).size(); x++)
+            if( data.grid.at( y ).at( x ) == 'a' )
+                as.push_back( { y, x } );
+
+    cout << "checking " << as.size() << " points\n";
+    vector< int > dists;
+    for(int i = 0; i < as.size(); i++)
+    {
+        auto t0 = timeSinceEpochMillisec();
+        cout << "... point " << i;
+        dists.push_back( dijkstra( data.grid, as.at( i ), data.end ) );
+        auto t1 = timeSinceEpochMillisec();
+        cout << " took " << t1 - t0 << " ms\n";
+    }
+
+    auto it = min_element( dists.begin(), dists.end() );
+    return *it;
 }
 
 Data parse( istream& is )
