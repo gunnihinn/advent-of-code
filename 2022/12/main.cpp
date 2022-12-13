@@ -1,3 +1,4 @@
+#include <cassert>
 #include <algorithm>
 #include <fstream>
 #include <chrono>
@@ -11,11 +12,16 @@
 
 using namespace std;
 
+struct Point {
+    int first;
+    int second;
+};
+
 struct Data
 {
     vector< vector< char > > grid;
-    pair< int, int > start;
-    pair< int, int > end;
+    Point start;
+    Point end;
 };
 
 uint64_t timeSinceEpochMillisec()
@@ -24,38 +30,12 @@ uint64_t timeSinceEpochMillisec()
     return duration_cast< milliseconds >( system_clock::now().time_since_epoch() ).count();
 }
 
-bool climbable( const vector< vector< char > > &grid, const pair< int, int > &from, const pair< int, int > &to )
+bool climbable( const vector< vector< char > > &grid, const Point &from, const Point &to )
 {
-    auto [ y0, x0 ] = from;
-    auto [ y1, x1 ] = to;
-    return grid.at( y1 ).at( x1 ) - grid.at( y0 ).at( x0 ) <= 1;
+    return grid.at( to.first ).at( to.second ) - grid.at( from.first ).at( from.second ) <= 1;
 }
 
-int calc( const map< pair< int, int >, int > &dist, const pair< int, int > &current, const pair< int, int > &p )
-{
-    auto it = dist.find( p );
-    if( it == dist.end() )
-    {
-        return dist.at( current ) + 1;
-    }
-    else
-    {
-        return min( dist.at( current ) + 1, it->second );
-    }
-}
-
-bool seen( const vector< pair< int, int > > &visited, const pair< int, int > &p )
-{
-    for(auto &q: visited)
-    {
-        if( p == q )
-            return true;
-    }
-
-    return false;
-}
-
-bool valid( int x, int y, pair< int, int > p )
+bool valid( int x, int y, const Point &p )
 {
     return 0 <= p.second &&
            p.second < x &&
@@ -63,92 +43,72 @@ bool valid( int x, int y, pair< int, int > p )
            p.first < y;
 }
 
-int dfs( const vector< vector< char > > &grid, vector< pair< int, int > > &visited, const pair< int, int > &end )
+int dijkstra( vector< vector< char > > grid, Point start, Point end )
 {
-    auto current = visited.back();
+    vector< vector< int > > dist;
+    vector< vector< bool > > unvisited;
 
-    if( current == end )
-    {
-        return visited.size();
-    }
-
-    auto [ y, x ] = current;
-    vector< pair< int, int > > cand = {
-        { y - 1, x },
-        { y + 1, x },
-        { y, x - 1 },
-        { y, x + 1 },
-    };
-
-    vector< int > distances = { grid.size() * grid.at( y ).size() + 1 };
-
-    for(auto &p : cand)
-    {
-        if( valid( grid.at( y ).size(), grid.size(), p ) &&
-            climbable( grid, current, p ) &&
-            !seen( visited, p ) )
-        {
-            visited.push_back( p );
-            distances.push_back( dfs( grid, visited, end ) );
-            visited.pop_back();
-        }
-    }
-
-    auto it = min_element( distances.begin(), distances.end() );
-    return *it;
-}
-
-int dijkstra( vector< vector< char > > grid, pair< int, int > start, pair< int, int > end )
-{
-    map< pair< int, int >, int > dist;
-    dist[ start ] = 0;
-
-    set< pair< int, int > > unvisited;
     for(int y = 0; y < grid.size(); y++)
-        for(int x =0; x < grid.at( y ).size(); x++)
-            unvisited.insert( { y, x } );
+    {
+        vector< int > row_dist;
+        vector< bool > row_unv;
+        for(int x = 0; x < grid.at( y ).size(); x++)
+        {
+            row_unv.push_back( true );
+            row_dist.push_back( grid.at( y ).size() * grid.size() + 1 );
+        }
+        unvisited.push_back( row_unv );
+        dist.push_back( row_dist );
+    }
+    dist[ start.first ][ start.second ] = 0;
 
     auto current = start;
-    while( unvisited.find( end ) != unvisited.end() )
+    while( unvisited[ end.first ][ end.second ] )
     {
-        auto [ y, x ] = current;
-        vector< pair< int, int > > cand = {
-            { y - 1, x },
-            { y + 1, x },
-            { y, x - 1 },
-            { y, x + 1 },
+        vector< Point > cand = {
+            { current.first - 1, current.second },
+            { current.first + 1, current.second },
+            { current.first, current.second - 1 },
+            { current.first, current.second + 1 },
         };
 
         for(auto& p: cand)
-            if( valid( grid.at( y ).size(), grid.size(), p ) && climbable( grid, current, p ) )
-                dist[ p ] = calc( dist, current, p );
+        {
+            if( valid( grid.at( current.first ).size(), grid.size(), p ) && climbable( grid, current, p ) )
+            {
+                dist[ p.first ][ p.second ] = min( dist[ current.first ][ current.second ] + 1, dist[ p.first ][ p.second ] );
+            }
+        }
 
-        unvisited.erase( current );
+        unvisited[ current.first ][ current.second ] = false;
 
-        auto it = min_element(
-            unvisited.begin(),
-            unvisited.end(),
-            [ &dist ](const pair< int, int > &a, const pair< int, int > &b){
-            auto it1 = dist.find( a );
-            if( it1 == dist.end() )
-                return false;
+        bool found = false;
+        int m = grid.size() * grid.at( current.first ).size() + 1;
+        for(int y = 0; y < unvisited.size(); y++)
+        {
+            for(int x = 0; x < unvisited[ y ].size(); x++)
+            {
+                if( unvisited[ y ][ x ] && dist[ y ][ x ] < m )
+                {
+                    found = true;
+                    current = { y, x };
+                    m = dist[ y ][ x ];
+                }
+            }
+        }
 
-            auto it2 = dist.find( b );
-            if( it2 == dist.end() )
-                return true;
-
-            return it1->second < it2->second;
-        } );
-        current = *it;
+        if( !found )
+        {
+            break;
+        }
     }
 
-
-    return dist[ end ];
+    return dist[ end.first ][ end.second ];
 }
 
 int part1( Data data )
 {
-    //vector< pair< int, int > > visited = { data.start };
+    //vector< Point > visited = { data.start };
     //visited.push_back( data.start );
     //return dfs( data.grid, visited, data.end ) - 1;
     return dijkstra( data.grid, data.start, data.end );
@@ -156,7 +116,7 @@ int part1( Data data )
 
 int part2( Data data )
 {
-    vector< pair< int, int > > as;
+    vector< Point > as;
     for(int y = 0; y < data.grid.size(); y++)
         for(int x = 0; x < data.grid.at( y ).size(); x++)
             if( data.grid.at( y ).at( x ) == 'a' )

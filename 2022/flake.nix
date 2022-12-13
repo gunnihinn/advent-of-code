@@ -14,7 +14,16 @@
         advent = pkgs.stdenv.mkDerivation {
           name = "advent-2022";
           src = self;
-          buildInputs = with pkgs; [ gdb rr flamegraph cmake gtest clang_14 ];
+          buildInputs = with pkgs; [
+            gdb
+            rr
+            flamegraph
+            cmake
+            gtest
+            clang_14
+            perf-tools
+            linuxPackages_latest.perf
+          ];
           hardeningDisable = [ "fortify" ];
         };
 
