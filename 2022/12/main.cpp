@@ -44,6 +44,60 @@ int calc( const map< pair< int, int >, int > &dist, const pair< int, int > &curr
     }
 }
 
+bool seen( const vector< pair< int, int > > &visited, const pair< int, int > &p )
+{
+    for(auto &q: visited)
+    {
+        if( p == q )
+            return true;
+    }
+
+    return false;
+}
+
+bool valid( int x, int y, pair< int, int > p )
+{
+    return 0 <= p.second &&
+           p.second < x &&
+           0 <= p.first &&
+           p.first < y;
+}
+
+int dfs( const vector< vector< char > > &grid, vector< pair< int, int > > &visited, const pair< int, int > &end )
+{
+    auto current = visited.back();
+
+    if( current == end )
+    {
+        return visited.size();
+    }
+
+    auto [ y, x ] = current;
+    vector< pair< int, int > > cand = {
+        { y - 1, x },
+        { y + 1, x },
+        { y, x - 1 },
+        { y, x + 1 },
+    };
+
+    vector< int > distances = { grid.size() * grid.at( y ).size() + 1 };
+
+    for(auto &p : cand)
+    {
+        if( valid( grid.at( y ).size(), grid.size(), p ) &&
+            climbable( grid, current, p ) &&
+            !seen( visited, p ) )
+        {
+            visited.push_back( p );
+            distances.push_back( dfs( grid, visited, end ) );
+            visited.pop_back();
+        }
+    }
+
+    auto it = min_element( distances.begin(), distances.end() );
+    return *it;
+}
+
 int dijkstra( vector< vector< char > > grid, pair< int, int > start, pair< int, int > end )
 {
     map< pair< int, int >, int > dist;
@@ -58,14 +112,16 @@ int dijkstra( vector< vector< char > > grid, pair< int, int > start, pair< int, 
     while( unvisited.find( end ) != unvisited.end() )
     {
         auto [ y, x ] = current;
-        if( y > 0 && climbable( grid, current, { y - 1, x } ) )
-            dist[ { y - 1, x } ] = calc( dist, current, { y - 1, x } );
-        if( y < grid.size() - 1 && climbable( grid, current, { y + 1, x } ) )
-            dist[ { y + 1, x } ] = calc( dist, current, { y + 1, x } );
-        if( x > 0 && climbable( grid, current, { y, x - 1 } ) )
-            dist[ { y, x - 1 } ] = calc( dist, current, { y, x - 1 } );
-        if( x < grid.at( y ).size() - 1 && climbable( grid, current, { y, x + 1 } ) )
-            dist[ { y, x + 1 } ] = calc( dist, current, { y, x + 1 } );
+        vector< pair< int, int > > cand = {
+            { y - 1, x },
+            { y + 1, x },
+            { y, x - 1 },
+            { y, x + 1 },
+        };
+
+        for(auto& p: cand)
+            if( valid( grid.at( y ).size(), grid.size(), p ) && climbable( grid, current, p ) )
+                dist[ p ] = calc( dist, current, p );
 
         unvisited.erase( current );
 
@@ -92,6 +148,9 @@ int dijkstra( vector< vector< char > > grid, pair< int, int > start, pair< int, 
 
 int part1( Data data )
 {
+    //vector< pair< int, int > > visited = { data.start };
+    //visited.push_back( data.start );
+    //return dfs( data.grid, visited, data.end ) - 1;
     return dijkstra( data.grid, data.start, data.end );
 }
 

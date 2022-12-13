@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.24)
 project(advent LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-O0 -g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS "-O0 -g -Wall -Wextra -rdynamic")
 
 add_executable(01 01/main.cpp)
 add_executable(02 02/main.cpp)
