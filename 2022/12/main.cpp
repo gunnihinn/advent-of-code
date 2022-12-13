@@ -43,27 +43,38 @@ bool valid( int x, int y, const Point &p )
            p.first < y;
 }
 
+std::vector< Point >::const_iterator contains( vector< Point > &points, Point &p )
+{
+    for(auto it=points.begin(); it != points.end(); ++it)
+    {
+        if( it->first == p.first && it->second == p.second )
+        {
+            return it;
+        }
+    }
+
+    return points.end();
+}
+
 int dijkstra( vector< vector< char > > grid, Point start, Point end )
 {
     vector< vector< int > > dist;
-    vector< vector< bool > > unvisited;
+    vector< Point > unvisited;
 
     for(int y = 0; y < grid.size(); y++)
     {
         vector< int > row_dist;
-        vector< bool > row_unv;
         for(int x = 0; x < grid.at( y ).size(); x++)
         {
-            row_unv.push_back( true );
             row_dist.push_back( grid.at( y ).size() * grid.size() + 1 );
+            unvisited.push_back( { y, x } );
         }
-        unvisited.push_back( row_unv );
         dist.push_back( row_dist );
     }
     dist[ start.first ][ start.second ] = 0;
 
     auto current = start;
-    while( unvisited[ end.first ][ end.second ] )
+    while( contains( unvisited, end ) != unvisited.end() )
     {
         vector< Point > cand = {
             { current.first - 1, current.second },
@@ -80,19 +91,18 @@ int dijkstra( vector< vector< char > > grid, Point start, Point end )
             }
         }
 
-        unvisited[ current.first ][ current.second ] = false;
+        unvisited.erase( contains( unvisited, current ) );
 
         bool found = false;
         int m = grid.size() * grid.at( current.first ).size() + 1;
-        for(int y = 0; y < unvisited.size(); y++)
+        for(auto &p : unvisited)
         {
-            for(int x = 0; x < unvisited[ y ].size(); x++)
             {
-                if( unvisited[ y ][ x ] && dist[ y ][ x ] < m )
+                if( dist[ p.first ][ p.second ] < m )
                 {
                     found = true;
-                    current = { y, x };
-                    m = dist[ y ][ x ];
+                    current = p;
+                    m = dist[ p.first ][ p.second ];
                 }
             }
         }
