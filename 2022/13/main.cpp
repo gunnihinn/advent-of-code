@@ -16,6 +16,53 @@ public:
     vector< Packet > children;
     optional< int > val;
 
+    Packet() = default;
+
+    Packet( int val )
+    {
+        Packet p;
+        p.val = val;
+        children.push_back( p );
+    };
+
+    optional< bool > le( const Packet &other ) const
+    {
+        if( val && other.val )
+        {
+            if( val.value() == other.val.value() )
+                return {}
+            ;
+            else
+                return val.value() < other.val.value();
+        }
+        else if( !val && !other.val )
+        {
+            auto it1 = children.begin();
+            auto it2 = other.children.begin();
+            while( it1 != children.end() && it2 != other.children.end() )
+            {
+                auto ok = it1->le( *it2 );
+                if( ok )
+                {
+                    return ok.value();
+                }
+                ++it1;
+                ++it2;
+            }
+            return it1 == children.end();
+        }
+        else if( val && !other.val )
+        {
+            Packet p( val.value() );
+            return p.le( other );
+        }
+        else
+        {
+            Packet p( other.val.value() );
+            return le( p );
+        }
+    }
+
     string str()
     {
         stringstream ss;
@@ -48,7 +95,7 @@ public:
         else if( line.at( 0 ) == '[' )
         {
             int c = 1;
-            int i = 1;
+            unsigned long int i = 1;
             while( c > 0 )
             {
                 assert( i < line.size() );
@@ -77,7 +124,7 @@ public:
         }
         else
         {
-            int i = 0;
+            unsigned long int i = 0;
             while( i < line.size() && '0' <= line.at( i ) && line.at( i ) <= '9'  )
                 i++;
             Packet packet;
@@ -105,11 +152,14 @@ public:
 int part1( Data data )
 {
     int result = 0;
+    int i = 1;
+    cout << "\n";
     for(auto pp : data.lines)
     {
-        cout << pp.first.str() << "\n";
-        cout << pp.second.str() << "\n";
-        cout << "\n";
+        cout << i << ": " << pp.first.le( pp.second ).value() << "\n";
+        if( pp.first.le( pp.second ).value() )
+            result += i;
+        i++;
     }
     return result;
 }
