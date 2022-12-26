@@ -2,6 +2,7 @@
 
 import argparse
 import collections
+import copy
 import functools
 from typing import *
 
@@ -19,11 +20,14 @@ class Data:
         lines = []
         for y in range(self.my, self.My + 1):
             line = []
-            for x in range(self.mx, self.Mx + 1):
+            for x in range(500 - 20, 500 + 20 + 1):
                 line.append(self.cave.get((x, y), "."))
             lines.append("".join(line))
 
         return "\n".join(lines)
+
+    def blocked(self, x, y):
+        return (x, y) in self.cave
 
     def inside(self, x, y):
         return self.mx <= x and x <= self.Mx and self.my <= y and y <= self.My
@@ -31,20 +35,26 @@ class Data:
     def fall(self):
         x, y = self.orig
         while self.inside(x, y):
-            if (x, y + 1) not in self.cave:
+            if not self.blocked(x, y + 1):
                 y += 1
-            elif (x - 1, y + 1) not in self.cave:
+            elif not self.blocked(x - 1, y + 1):
                 x -= 1
                 y += 1
-            elif (x + 1, y + 1) not in self.cave:
+            elif not self.blocked(x + 1, y + 1):
                 x += 1
                 y += 1
             else:
                 self.cave[(x, y)] = "o"
                 return
 
+            if self.orig in self.cave:
+                raise Exception()
+
         if not self.inside(x, y):
             raise Exception()
+
+    def size(self):
+        return sum(v == "o" for v in self.cave.values())
 
 
 def sign(x: int) -> int:
@@ -96,18 +106,31 @@ def parse(lines: List[str]) -> List[Data]:
 
 
 def part1(data: Data) -> int:
-    i = 0
     while True:
         try:
             data.fall()
         except:
             break
-        i += 1
-    return i
+    return data.size()
 
 
 def part2(data: Data) -> int:
-    return 0
+    for x in range(-10000, 10000):
+        data.cave[(x, data.My + 2)] = "#"
+    data.My += 2
+    data.mx = min(k[0] for k in data.cave)
+    data.Mx = max(k[0] for k in data.cave)
+
+    a = len(data.cave)
+    b = 0
+    while a != b:
+        try:
+            data.fall()
+            a = b
+            b = len(data.cave)
+        except:
+            break
+    return data.size()
 
 
 if __name__ == "__main__":
@@ -118,7 +141,7 @@ if __name__ == "__main__":
     with open(args.filename) as fh:
         data = parse(fh.readlines())
 
-    p1 = part1(data)
+    p1 = part1(copy.deepcopy(data))
     print(f"Part 1: {p1}")
-    p2 = part2(data)
+    p2 = part2(copy.deepcopy(data))
     print(f"Part 2: {p2}")
