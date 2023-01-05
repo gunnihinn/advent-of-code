@@ -87,32 +87,29 @@ def dist_all(graph: Dict[str, List[str]]) -> Dict[Tuple[str, str], int]:
 def part1(data: Data) -> int:
     dists = dist_all(data.graph)
     rates = {k: v for k, v in data.rates.items() if v != 0}
-    left = list(rates.keys())
 
-    return P(dists, rates, left, "AA", 30)
+    return P(dists, rates, "AA", 30)
 
 
 def P(
     dists: Dict[Tuple[str, str], int],
     rates: Dict[str, int],
-    left: List[str],
     pos: str,
     time: int,
 ) -> int:
-    if not left:
+    if not rates:
         return 0
 
     if time <= 0:
         return 0
 
     ps = []
-    for node in left:
-        new_left = [n for n in left if n != node]
+    for node in rates:
+        new_rates = {k: v for k, v in rates.items() if k != node}
         t = dists[(pos, node)]
         if time - t > 0:
             ps.append(
-                (time - t - 1) * rates[node]
-                + P(dists, rates, new_left, node, time - t - 1)
+                (time - t - 1) * rates[node] + P(dists, new_rates, node, time - t - 1)
             )
 
     if not ps:
@@ -122,8 +119,48 @@ def P(
 
 
 def part2(data: Data) -> int:
-    result = 0
-    return result
+    dists = dist_all(data.graph)
+    rates = {k: v for k, v in data.rates.items() if v != 0}
+    open = {}
+    players = [("AA", 0, 0) for _ in range(1)]
+
+    return Q(dists, rates, open, players, 30)
+
+
+def Q(
+    dists: Dict[Tuple[str, str], int],
+    rates: Dict[str, int],
+    open: Dict[str, int],
+    players: List[Tuple[str, int, int]],
+    time: int,
+) -> int:
+    if time <= 0:
+        return 0
+
+    total = sum(v for v in open.values())
+    if not rates:
+        return total * time
+
+    pos, rate, wait = players[0]
+    ps = []
+    if wait == 0:
+        new_open = copy.deepcopy(open)
+        if rate > 0:
+            new_open[pos] = rate
+        for node in rates:
+            new_rates = {k: v for k, v in rates.items() if k != node}
+            t = dists[(pos, node)]
+            ps.append(
+                total
+                + Q(dists, new_rates, new_open, [(node, rates[node], t - 1)], time - 1)
+            )
+    else:
+        ps.append(total + Q(dists, rates, open, [(pos, rate, wait - 1)], time - 1))
+
+    if not ps:
+        return 0
+
+    return max(ps)
 
 
 if __name__ == "__main__":
