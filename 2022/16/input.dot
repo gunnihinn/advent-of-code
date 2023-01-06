@@ -1,0 +1,89 @@
+graph {
+graph [root="AA"]
+  IR -- XN
+  LQ -- JT
+  TR -- HI
+  EY -- XC
+  BU -- ES
+  JK -- UI
+  NE -- IA
+  YZ -- YA
+  IR -- UI
+  TE -- YA
+  UB -- AA
+  AT -- BR
+  OC -- PE
+  CF -- XN
+  AQ -- AZ
+  JK -- QV
+  VK -- ZL
+  RY -- AZ
+  SZ -- YZ
+  EB -- XC
+  AT -- NE
+  DF -- RK
+  OC -- LJ
+  SP -- LJ
+  CF -- BR
+  OG -- DF
+  FF -- VD
+  GQ -- OW
+  QI -- XN
+  GQ -- XJ
+  UE -- RK
+  AL -- WZ
+  VK -- OM
+  OC -- WX
+  VK -- XJ
+  VA -- AZ
+  TD -- WX
+  AZ -- RC
+  SP -- AA
+  VK -- VA
+  JH -- RK
+  FF -- AA
+  DX -- HI
+  YL -- OW
+  AL -- ZL
+  VK -- CI
+  OC -- QV
+  GQ -- AQ
+  XN -- VD
+  SZ -- GQ
+  AT -- DX
+  ZW -- JH
+  EY -- RC
+  EB -- AA
+  IA -- UI
+  JO -- UI
+  JO -- AA
+  ZW -- EY
+  KW -- YL
+  AT -- BU
+  MD -- YA
+  UE -- UI
+  UB -- OM
+  AT -- TD
+  OC -- QI
+  TE -- RY
+  PE -- CI
+  LQ -- EY
+  KW -- MD
+  XN -- OG
+AA [color="red"]
+AT [label="AT (17)",color="blue"]
+GQ [label="GQ (22)",color="blue"]
+OC [label="OC (4)",color="blue"]
+TR [label="TR (18)",color="blue"]
+VK [label="VK (11)",color="blue"]
+YL [label="YL (23)",color="blue"]
+ES [label="ES (13)",color="blue"]
+XN [label="XN (7)",color="blue"]
+EY [label="EY (10)",color="blue"]
+YA [label="YA (12)",color="blue"]
+AZ [label="AZ (14)",color="blue"]
+WZ [label="WZ (25)",color="blue"]
+UI [label="UI (8)",color="blue"]
+JT [label="JT (21)",color="blue"]
+RK [label="RK (9)",color="blue"]
+}

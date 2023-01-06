@@ -5,6 +5,10 @@ import collections
 import copy
 import functools
 import itertools
+import math
+import multiprocessing
+import os.path
+import pickle
 import re
 from typing import *
 
@@ -26,6 +30,28 @@ class Data:
 
     def __str__(self) -> str:
         return f"{self.graph} - {self.rates}"
+
+    def graphviz(self) -> str:
+        nodes = set()
+        for start in self.graph:
+            for end in self.graph[start]:
+                if not (start, end) in nodes and not (end, start) in nodes:
+                    nodes.add((start, end))
+
+        lines = []
+        lines.append("graph {")
+
+        for a, b in nodes:
+            lines.append(f"  {a} -- {b}")
+
+        lines.append('AA [color="red"]')
+        for node, rate in self.rates.items():
+            if rate != 0:
+                lines.append(f'{node} [label="{node} ({rate})",color="blue"]')
+
+        lines.append("}")
+
+        return "\n".join(lines)
 
 
 def parse(lines: List[str]) -> Data:
@@ -118,6 +144,152 @@ def P(
     return max(ps)
 
 
+def part1_calc_given_path(
+    dists: Dict[Tuple[str, str], int], rates: Dict[str, str], path: List[str], time: int
+) -> int:
+    total = 0
+
+    for a, b in zip(path, path[1:]):
+        time -= dists[(a, b)] + 1
+        if time < 0:
+            break
+        total += time * rates[b]
+        assert time >= 0
+
+    return total
+
+
+def part1_alt(data: Data) -> int:
+    dists = dist_all(data.graph)
+    rates = {k: v for k, v in data.rates.items() if v != 0}
+
+    M = None
+    p = None
+    for path in itertools.permutations(rates.keys()):
+        m = part1_calc_given_path(dists, rates, ("AA",) + path, 30)
+        if M is None or M < m:
+            M = m
+            p = path
+
+    p = ("AA",) + p
+    print(f"Path: {p}")
+    return M
+
+
+def part2_alt(data: Data) -> int:
+    N = len(data.rates)
+    fn = f"./.dists-{N}.pkl"
+    if os.path.exists(fn):
+        with open(fn, mode="rb") as fh:
+            dists = pickle.load(fh)
+    else:
+        dists = dist_all(data.graph)
+        with open(fn, mode="wb") as fh:
+            pickle.dump(dists, fh)
+    rates = {k: v for k, v in data.rates.items() if v != 0}
+
+    M = None
+    p = None
+
+    n = sum(
+        math.factorial(len(rates)) * math.factorial(len(rates) - k) // math.factorial(k)
+        for k in range(1, len(rates))
+    )
+    print(f"Checking up to {n} path combinations")
+
+    i = 0
+    j = 0
+    for l in range(len(rates) // 2, 0, -1):
+        for path1 in itertools.permutations(rates.keys(), l):
+            nodes2 = [n for n in rates if n not in path1]
+            for path2 in itertools.permutations(nodes2):
+                if j % 100000 == 0:
+                    print(f"... checked {i}/{n} paths, best so far {M}")
+
+                j += 1
+                m1 = part1_calc_given_path(dists, rates, ("AA",) + path1, 26)
+
+                s = sup(rates, path2, 26)
+                if M is not None and m1 + s < M:
+                    i += math.factorial(len(nodes2))
+                    break
+
+                i += 1
+                m2 = part1_calc_given_path(dists, rates, ("AA",) + path2, 26)
+                if M is None or M < m1 + m2:
+                    M = m1 + m2
+                    p = (("AA",) + path1, ("AA",) + path2)
+
+    print(f"... checked {i}/{n} paths, best so far {M}")
+
+    print(f"Paths: {p}")
+    return M
+
+
+def part2_alt_multithread(data: Data, l: int, tid: int) -> int:
+    N = len(data.rates)
+    fn = f"./.dists-{N}.pkl"
+    if os.path.exists(fn):
+        with open(fn, mode="rb") as fh:
+            dists = pickle.load(fh)
+    else:
+        dists = dist_all(data.graph)
+        with open(fn, mode="wb") as fh:
+            pickle.dump(dists, fh)
+    rates = {k: v for k, v in data.rates.items() if v != 0}
+
+    M = None
+    p = None
+
+    n = math.factorial(len(rates))
+    print(f"Thread {tid}: Checking {n} path combinations")
+
+    i = 0
+    j = 0
+    for path1 in itertools.permutations(rates.keys(), l):
+        if length(dists, path1) > 26:
+            i += math.factorial(len(rates) - l)
+            continue
+
+        nodes2 = [n for n in rates if n not in path1]
+        for path2 in itertools.permutations(nodes2):
+            if j % 100000 == 0:
+                print(f"Thread {tid}: ... checked {i}/{n} paths, best so far {M}")
+
+            j += 1
+
+            m1 = part1_calc_given_path(dists, rates, ("AA",) + path1, 26)
+            s = sup(rates, path2, 26)
+            if M is not None and m1 + s < M:
+                i += math.factorial(len(nodes2))
+                break
+
+            if length(dists, path2) > 26:
+                i += 1
+                continue
+
+            i += 1
+            m2 = part1_calc_given_path(dists, rates, ("AA",) + path2, 26)
+            if M is None or M < m1 + m2:
+                M = m1 + m2
+                p = (("AA",) + path1, ("AA",) + path2)
+
+    print(f"Thread {tid}: ... checked {i}/{n} paths, best so far {M}")
+
+    return M
+
+
+def sup(rates: Dict[str, int], path: List[str], time: int) -> int:
+    # Best possible outcome of this path if we're allowed to reorder it and assume all nodes are next to each other
+    vals = sorted([rates[n] for n in path], reverse=True)
+    return sum(r * (time - t) for t, r in enumerate(vals, start=1))
+
+
+def length(dists: Dict[Tuple[str, str], int], path: List[str]) -> int:
+    # Time it takes to travel path and turn on each valve in path
+    return sum(dists[(a, b)] for a, b in zip(path, path[1:])) + len(path)
+
+
 def part2(data: Data) -> int:
     dists = dist_all(data.graph)
     rates = {k: v for k, v in data.rates.items() if v != 0}
@@ -171,7 +343,22 @@ if __name__ == "__main__":
     with open(args.filename) as fh:
         data = parse(fh.readlines())
 
-    p1 = part1(copy.deepcopy(data))
-    print(f"Part 1: {p1}")
-    p2 = part2(copy.deepcopy(data))
-    print(f"Part 2: {p2}")
+    # p1 = part1(copy.deepcopy(data))
+    # print(f"Part 1: {p1}")
+    N = 7
+    M = len([v for v in data.rates.values() if v != 0])
+
+    def f(l):
+        return part2_alt_multithread(data, l, l)
+
+    best = None
+    with multiprocessing.Pool(processes=N) as pool:
+        for m in pool.imap_unordered(f, range(M // 2, 0, -1)):
+            if best is None or best < m:
+                best = m
+
+            print(f"BEST: {best}")
+            with open("best.txt", "w+") as fh:
+                print(f"BEST: {best}", file=fh)
+
+    print(f"Part 2: {best}")
