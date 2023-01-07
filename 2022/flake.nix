@@ -16,6 +16,7 @@
           src = self;
           buildInputs = with pkgs; [
             gdb
+            graphviz
             rr
             flamegraph
             cmake

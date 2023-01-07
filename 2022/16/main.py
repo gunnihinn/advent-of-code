@@ -110,41 +110,7 @@ def dist_all(graph: Dict[str, List[str]]) -> Dict[Tuple[str, str], int]:
     return known
 
 
-def part1(data: Data) -> int:
-    dists = dist_all(data.graph)
-    rates = {k: v for k, v in data.rates.items() if v != 0}
-
-    return P(dists, rates, "AA", 30)
-
-
-def P(
-    dists: Dict[Tuple[str, str], int],
-    rates: Dict[str, int],
-    pos: str,
-    time: int,
-) -> int:
-    if not rates:
-        return 0
-
-    if time <= 0:
-        return 0
-
-    ps = []
-    for node in rates:
-        new_rates = {k: v for k, v in rates.items() if k != node}
-        t = dists[(pos, node)]
-        if time - t > 0:
-            ps.append(
-                (time - t - 1) * rates[node] + P(dists, new_rates, node, time - t - 1)
-            )
-
-    if not ps:
-        return 0
-
-    return max(ps)
-
-
-def part1_calc_given_path(
+def calc_given_path(
     dists: Dict[Tuple[str, str], int], rates: Dict[str, str], path: List[str], time: int
 ) -> int:
     total = 0
@@ -159,14 +125,22 @@ def part1_calc_given_path(
     return total
 
 
-def part1_alt(data: Data) -> int:
-    dists = dist_all(data.graph)
+def part1(data: Data) -> int:
+    N = len(data.rates)
+    fn = f"./.dists-{N}.pkl"
+    if os.path.exists(fn):
+        with open(fn, mode="rb") as fh:
+            dists = pickle.load(fh)
+    else:
+        dists = dist_all(data.graph)
+        with open(fn, mode="wb") as fh:
+            pickle.dump(dists, fh)
     rates = {k: v for k, v in data.rates.items() if v != 0}
 
     M = None
     p = None
     for path in itertools.permutations(rates.keys()):
-        m = part1_calc_given_path(dists, rates, ("AA",) + path, 30)
+        m = calc_given_path(dists, rates, ("AA",) + path, 30)
         if M is None or M < m:
             M = m
             p = path
@@ -207,7 +181,7 @@ def part2_alt(data: Data) -> int:
                     print(f"... checked {i}/{n} paths, best so far {M}")
 
                 j += 1
-                m1 = part1_calc_given_path(dists, rates, ("AA",) + path1, 26)
+                m1 = calc_given_path(dists, rates, ("AA",) + path1, 26)
 
                 s = sup(rates, path2, 26)
                 if M is not None and m1 + s < M:
@@ -215,7 +189,7 @@ def part2_alt(data: Data) -> int:
                     break
 
                 i += 1
-                m2 = part1_calc_given_path(dists, rates, ("AA",) + path2, 26)
+                m2 = calc_given_path(dists, rates, ("AA",) + path2, 26)
                 if M is None or M < m1 + m2:
                     M = m1 + m2
                     p = (("AA",) + path1, ("AA",) + path2)
@@ -258,7 +232,7 @@ def part2_alt_multithread(data: Data, l: int, tid: int) -> int:
 
             j += 1
 
-            m1 = part1_calc_given_path(dists, rates, ("AA",) + path1, 26)
+            m1 = calc_given_path(dists, rates, ("AA",) + path1, 26)
             s = sup(rates, path2, 26)
             if M is not None and m1 + s < M:
                 i += math.factorial(len(nodes2))
@@ -269,7 +243,7 @@ def part2_alt_multithread(data: Data, l: int, tid: int) -> int:
                 continue
 
             i += 1
-            m2 = part1_calc_given_path(dists, rates, ("AA",) + path2, 26)
+            m2 = calc_given_path(dists, rates, ("AA",) + path2, 26)
             if M is None or M < m1 + m2:
                 M = m1 + m2
                 p = (("AA",) + path1, ("AA",) + path2)
@@ -291,48 +265,76 @@ def length(dists: Dict[Tuple[str, str], int], path: List[str]) -> int:
 
 
 def part2(data: Data) -> int:
-    dists = dist_all(data.graph)
-    rates = {k: v for k, v in data.rates.items() if v != 0}
-    open = {}
-    players = [("AA", 0, 0) for _ in range(1)]
+    N = len(data.rates)
+    fn = f"./.dists-{N}.pkl"
+    if os.path.exists(fn):
+        with open(fn, mode="rb") as fh:
+            dists = pickle.load(fh)
+    else:
+        dists = dist_all(data.graph)
+        with open(fn, mode="wb") as fh:
+            pickle.dump(dists, fh)
+    rates = {k: v + 1 for k, v in data.rates.items() if v != 0}
 
-    return Q(dists, rates, open, players, 30)
+    players = [("AA", 0), ("AA", 0)]
+    valves = set()
+
+    return rec(dists, rates, players, valves, 26)
 
 
-def Q(
+def rec(
     dists: Dict[Tuple[str, str], int],
     rates: Dict[str, int],
-    open: Dict[str, int],
-    players: List[Tuple[str, int, int]],
+    players: List[Tuple[str, int]],
+    valves: Set[str],
     time: int,
 ) -> int:
+    a, b = players
+    if a[1] > b[1]:
+        a, b = b, a
+
+    if a[1] > time:
+        a = (a[0], time)
+
+    time -= a[1]
+    b = (b[0], b[1] - a[1])
+
+    output = 0
+    for n in valves:
+        output += rates[n]
+    total = output * a[1]
+
     if time <= 0:
-        return 0
+        total
 
-    total = sum(v for v in open.values())
-    if not rates:
-        return total * time
+    if a[0] in rates:
+        valves.add(a[0])
 
-    pos, rate, wait = players[0]
-    ps = []
-    if wait == 0:
-        new_open = copy.deepcopy(open)
-        if rate > 0:
-            new_open[pos] = rate
-        for node in rates:
-            new_rates = {k: v for k, v in rates.items() if k != node}
-            t = dists[(pos, node)]
-            ps.append(
-                total
-                + Q(dists, new_rates, new_open, [(node, rates[node], t - 1)], time - 1)
-            )
-    else:
-        ps.append(total + Q(dists, rates, open, [(pos, rate, wait - 1)], time - 1))
+    nodes = [n for n in rates if n not in valves and n != b[0]]
+    if not nodes:
+        output += rates.get(a[0], 0)
+        if b[1]:
+            if b[1] <= time:
+                total += output * b[1]
+                output += rates.get(b[0], 0)
+                time -= b[1]
+                total += output * time
+            else:
+                total += output * time
+            return total
+        else:
+            return total + output * time
 
-    if not ps:
-        return 0
-
-    return max(ps)
+    return total + max(
+        rec(
+            dists,
+            rates,
+            [b, (node, dists[(a[0], node)])],
+            copy.deepcopy(valves),
+            time,
+        )
+        for node in nodes
+    )
 
 
 if __name__ == "__main__":
@@ -343,22 +345,26 @@ if __name__ == "__main__":
     with open(args.filename) as fh:
         data = parse(fh.readlines())
 
-    # p1 = part1(copy.deepcopy(data))
-    # print(f"Part 1: {p1}")
-    N = 7
-    M = len([v for v in data.rates.values() if v != 0])
+    p1 = part1(copy.deepcopy(data))
+    print(f"Part 1: {p1}")
+    p2 = part2(copy.deepcopy(data))
+    print(f"Part 2: {p2}")
 
-    def f(l):
-        return part2_alt_multithread(data, l, l)
-
-    best = None
-    with multiprocessing.Pool(processes=N) as pool:
-        for m in pool.imap_unordered(f, range(M // 2, 0, -1)):
-            if best is None or best < m:
-                best = m
-
-            print(f"BEST: {best}")
-            with open("best.txt", "w+") as fh:
-                print(f"BEST: {best}", file=fh)
-
-    print(f"Part 2: {best}")
+#    N = 7
+#    M = len([v for v in data.rates.values() if v != 0])
+#
+#    def f(l):
+#        return part2_alt_multithread(data, l, l)
+#
+#    best = None
+#    with multiprocessing.Pool(processes=N) as pool:
+#        for m in pool.imap_unordered(f, range(M // 2, 0, -1)):
+#            if best is None or best < m:
+#                best = m
+#
+#            print(f"BEST: {best}")
+#            with open("best.txt", "w+") as fh:
+#                print(f"BEST: {best}", file=fh)
+#
+#    print(f"Part 2: {best}")
+#
