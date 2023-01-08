@@ -164,7 +164,11 @@ def part2(data: Data) -> int:
 
     results = []
     for i in range(1, len(rates)):
-        m = math.factorial(len(rates)) // math.factorial(i)
+        m = (
+            math.factorial(len(rates))
+            // math.factorial(i)
+            // math.factorial(len(rates) - i)
+        )
         print(f"Checking {m} combinations of length {i}")
         for sub in itertools.combinations(rates, i):
             compl = [n for n in rates if n not in sub]
